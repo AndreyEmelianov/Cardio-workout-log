@@ -20,6 +20,8 @@ class Workout {
 }
 
 class Running extends Workout {
+  type = 'running';
+
   constructor(coords, distance, duration, temp) {
     super(coords, distance, duration);
     this.temp = temp;
@@ -31,6 +33,8 @@ class Running extends Workout {
   }
 }
 class Cycling extends Workout {
+  type = 'cycling';
+
   constructor(coords, distance, duration, climb) {
     super(coords, distance, duration);
     this.climb = climb;
@@ -48,6 +52,7 @@ console.log(running, cycling);
 class App {
   #map;
   #mapEvent;
+  #workouts = [];
 
   constructor() {
     this._getPosition();
@@ -99,22 +104,74 @@ class App {
   _newWorkout(event) {
     event.preventDefault();
 
-    //очистка полей ввода данных
+    const areNumbers = (...numbers) =>
+      numbers.every(num => Number.isFinite(num));
+
+    const ateNumbersPositive = (...numbers) => numbers.every(num => num > 0);
+
+    const { lat, lng } = this.#mapEvent.latlng;
+    let workout;
+
+    // получить данные из формы
+    const type = inputType.value;
+    const distance = +inputDistance.value;
+    const duration = +inputDuration.value;
+
+    //Если тренировка - пробежка, создать обьект Running
+    if (type === 'running') {
+      const temp = +inputTemp.value;
+
+      // проверка валидности данных
+      if (
+        !areNumbers(distance, duration, temp) ||
+        !ateNumbersPositive(distance, duration, temp)
+      )
+        return alert('Введите положительное число');
+
+      workout = new Running([lat, lng], distance, duration, temp);
+    }
+
+    //Если тренировка - велоезда, создать обьект Cycling
+    if (type === 'cycling') {
+      const climb = +inputClimb.value;
+
+      // проверка валидности данных
+      if (
+        !areNumbers(distance, duration, climb) ||
+        !ateNumbersPositive(distance, duration)
+      )
+        return alert('Введите положительное число');
+
+      workout = new Cycling([lat, lng], distance, duration, climb);
+    }
+
+    // Добавить новый обьект в массив тренировок
+
+    this.#workouts.push(workout);
+    console.log(workout);
+
+    // Отображение тренировки на карте
+
+    this.displayWorkout(workout);
+
+    // Отобразить тренировку в списке
+
+    //спрятать форму и очистка полей ввода данных
     inputDistance.value =
       inputDuration.value =
       inputTemp.value =
       inputClimb.value =
         '';
+  }
 
-    // отображение маркера
-    const { lat, lng } = this.#mapEvent.latlng;
-    L.marker([lat, lng])
+  displayWorkout(workout) {
+    L.marker(workout.coords)
       .addTo(this.#map)
       .bindPopup(
         L.popup({
           autoClose: false,
           closeOnClick: false,
-          className: 'running-popup',
+          className: `${workout.type}-popup`,
         })
       )
       .setPopupContent('Тренировка')
