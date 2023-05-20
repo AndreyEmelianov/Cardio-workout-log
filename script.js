@@ -65,14 +65,19 @@ class Cycling extends Workout {
 
 const running = new Running([50, 39], 7, 40, 170);
 const cycling = new Cycling([50, 39], 30, 80, 370);
-console.log(running, cycling);
 class App {
   #map;
   #mapEvent;
   #workouts = [];
 
   constructor() {
+    //получение местоположения пользователя
     this._getPosition();
+
+    // получение данных из localStorage
+    this._getLocalStorageData();
+
+    // добавление обработчиков событий
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleClimbField);
     containerWorkouts.addEventListener('click', this._moveToWorkout.bind(this));
@@ -92,7 +97,6 @@ class App {
   _loadMap(position) {
     const { latitude } = position.coords;
     const { longitude } = position.coords;
-    console.log(`https://www.google.ru/maps/@${latitude},${longitude},14z`);
 
     const coords = [latitude, longitude];
 
@@ -103,7 +107,13 @@ class App {
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.#map);
 
+    // обработка клика на карте
     this.#map.on('click', this._showForm.bind(this));
+
+    // отображение тренировок на карте из local storage
+    this.#workouts.forEach(workout => {
+      this._displayWorkout(workout);
+    });
   }
 
   _showForm(event) {
@@ -183,6 +193,9 @@ class App {
 
     //спрятать форму и очистка полей ввода данных
     this._hideForm();
+
+    // Добавить все тренировки в локальное хранилище
+    this._addWorkoutsToLocalStorage();
   }
 
   _displayWorkout(workout) {
@@ -257,7 +270,6 @@ class App {
 
   _moveToWorkout(event) {
     const workoutElement = event.target.closest('.workout');
-    console.log(workoutElement);
 
     if (!workoutElement) return;
 
@@ -271,9 +283,27 @@ class App {
         duration: 1,
       },
     });
+  }
 
-    workout.click();
-    console.log(workout);
+  _addWorkoutsToLocalStorage() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+  }
+
+  _getLocalStorageData() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+
+    if (!data) return;
+
+    this.#workouts = data;
+
+    this.#workouts.forEach(workout => {
+      this._displayWorkoutOnSidebar(workout);
+    });
+  }
+
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload();
   }
 }
 
