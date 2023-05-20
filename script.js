@@ -11,6 +11,7 @@ const inputClimb = document.querySelector('.form__input--climb');
 class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
+  clickNumber = 0;
 
   constructor(coords, distance, duration) {
     this.coords = coords;
@@ -26,6 +27,10 @@ class Workout {
       : (this.description = `Велотренировка ${new Intl.DateTimeFormat(
           'ru-RU'
         ).format(this.date)}`);
+  }
+
+  click() {
+    this.clickNumber++;
   }
 }
 
@@ -68,10 +73,9 @@ class App {
 
   constructor() {
     this._getPosition();
-
     form.addEventListener('submit', this._newWorkout.bind(this));
-
     inputType.addEventListener('change', this._toggleClimbField);
+    containerWorkouts.addEventListener('click', this._moveToWorkout.bind(this));
   }
 
   _getPosition() {
@@ -169,7 +173,6 @@ class App {
     // Добавить новый обьект в массив тренировок
 
     this.#workouts.push(workout);
-    console.log(workout);
 
     // Отображение тренировки на карте
 
@@ -250,6 +253,27 @@ class App {
     }
 
     form.insertAdjacentHTML('afterend', html);
+  }
+
+  _moveToWorkout(event) {
+    const workoutElement = event.target.closest('.workout');
+    console.log(workoutElement);
+
+    if (!workoutElement) return;
+
+    const workout = this.#workouts.find(
+      item => item.id === workoutElement.dataset.id
+    );
+
+    this.#map.setView(workout.coords, 13, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
+
+    workout.click();
+    console.log(workout);
   }
 }
 
